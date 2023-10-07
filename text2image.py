@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument(
         "--pretrained_model_name_or_path",
         type=str,
-        default="/apdcephfs_cq2/share_1290939/shaoshuyang/stable-diffusion-v1-5",
+        default="runwayml/stable-diffusion-v1-5",
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
@@ -51,11 +51,11 @@ def parse_args():
         help="The directory where the downloaded models and datasets will be stored.",
     )
     parser.add_argument("--seed", type=int, default=23, help="A seed for reproducible training.")
-    parser.add_argument("--config", type=str, default="../configs/addm/15_4x_teaser.yaml")
+    parser.add_argument("--config", type=str, default="./configs/sd1.5_1024x1024.yaml")
     parser.add_argument(
         "--logging_dir",
         type=str,
-        default="/apdcephfs/share_1290939/shaoshuyang/t2i/addm/",
+        default="",
         help=(
             "[TensorBoard](https://www.tensorflow.org/tensorboard) log directory. Will default to"
             " *output_dir/runs/**CURRENT_DATETIME_HOSTNAME***."
