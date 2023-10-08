@@ -42,7 +42,7 @@ pip install -r requirements.txt
 ### stable-diffusion xl v1.0 base 
 ```bash
 # 2048x2048 (4x) generation
-python text2image_xl.py \
+python3 text2image_xl.py \
 --pretrained_model_name_or_path stabilityai/stable-diffusion-xl-base-1.0 \
 --validation_prompt "a professional photograph of an astronaut riding a horse" \
 --seed 23 \
@@ -66,15 +66,15 @@ You can create your custom generation resolution setting by creating a `.yaml` c
 
 ```bash
 # sd v1.5 1024x1024 (4x) generation
-python text2image.py \
+python3 text2image.py \
 --pretrained_model_name_or_path runwayml/stable-diffusion-v1-5 \
 --validation_prompt "a professional photograph of an astronaut riding a horse" \
 --seed 23 \
---config ./configs/sd1.5_1024x1024.txt \
+--config ./configs/sd1.5_1024x1024.yaml \
 --logging_dir ${your-logging-dir}
 
 # sd v2.1 1024x1024 (4x) generation
-python text2image.py \
+python3 text2image.py \
 --pretrained_model_name_or_path stabilityai/stable-diffusion-2-1-base \
 --validation_prompt "a professional photograph of an astronaut riding a horse" \
 --seed 23 \

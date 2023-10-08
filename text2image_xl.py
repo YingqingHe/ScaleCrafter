@@ -370,12 +370,14 @@ def read_module_list(path):
 
 
 def read_dilate_settings(path):
+    print(f"Reading dilation settings")
     dilate_settings = dict()
     with open(path, 'r') as f:
         raw_lines = f.readlines()
         for raw_line in raw_lines:
-            name, dilate = raw_line.split(' ')
-            dilate_settings[name] = dilate
+            name, dilate = raw_line.split(':')
+            dilate_settings[name] = float(dilate)
+            print(f"{name} : {dilate_settings[name]}")
     return dilate_settings
 
 
@@ -384,12 +386,9 @@ def main():
     logging_dir = os.path.join(args.logging_dir)
     config = OmegaConf.load(args.config)
 
-    accelerator_project_config = ProjectConfiguration(
-        total_limit=args.checkpoints_total_limit, logging_dir=logging_dir)
+    accelerator_project_config = ProjectConfiguration(logging_dir=logging_dir)
     accelerator = Accelerator(
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
         mixed_precision=args.mixed_precision,
-        log_with=args.report_to,
         project_config=accelerator_project_config,
     )
     weight_dtype = torch.float32
@@ -460,7 +459,7 @@ def main():
             (i + 1) * inference_batch_size, len(validation_prompt))]
 
         for n in range(config.num_iters_per_prompt):
-            set_seed(config.seed + n)
+            set_seed(args.seed + n)
 
             sdedit_scale = config.sdedit_scale if hasattr(config, 'sdedit_scale') else 1
             if hasattr(config, 'sdedit_tau') and config.sdedit_tau > 0:

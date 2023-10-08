@@ -20,7 +20,6 @@ from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import resca
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from model import ReDilateConvProcessor, inflate_kernels
 
-
 logger = get_logger(__name__, log_level="INFO")
 
 
@@ -51,7 +50,7 @@ def parse_args():
         help="The directory where the downloaded models and datasets will be stored.",
     )
     parser.add_argument("--seed", type=int, default=23, help="A seed for reproducible training.")
-    parser.add_argument("--config", type=str, default="./configs/sd1.5_1024x1024.txt")
+    parser.add_argument("--config", type=str, default="./configs/sd1.5_1024x1024_backup.txt")
     parser.add_argument(
         "--logging_dir",
         type=str,
@@ -98,24 +97,24 @@ def pipeline_processor(
 ):
     @torch.no_grad()
     def forward(
-        prompt=None,
-        height: Optional[int] = None,
-        width: Optional[int] = None,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 7.5,
-        negative_prompt=None,
-        num_images_per_prompt: Optional[int] = 1,
-        eta: float = 0.0,
-        generator=None,
-        latents: Optional[torch.FloatTensor] = None,
-        prompt_embeds: Optional[torch.FloatTensor] = None,
-        negative_prompt_embeds: Optional[torch.FloatTensor] = None,
-        output_type: Optional[str] = "pil",
-        return_dict: bool = True,
-        callback=None,
-        callback_steps: int = 1,
-        cross_attention_kwargs=None,
-        guidance_rescale: float = 0.0,
+            prompt=None,
+            height: Optional[int] = None,
+            width: Optional[int] = None,
+            num_inference_steps: int = 50,
+            guidance_scale: float = 7.5,
+            negative_prompt=None,
+            num_images_per_prompt: Optional[int] = 1,
+            eta: float = 0.0,
+            generator=None,
+            latents: Optional[torch.FloatTensor] = None,
+            prompt_embeds: Optional[torch.FloatTensor] = None,
+            negative_prompt_embeds: Optional[torch.FloatTensor] = None,
+            output_type: Optional[str] = "pil",
+            return_dict: bool = True,
+            callback=None,
+            callback_steps: int = 1,
+            cross_attention_kwargs=None,
+            guidance_rescale: float = 0.0,
     ):
         # 0. Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor
@@ -203,6 +202,7 @@ def pipeline_processor(
                             dilate = max(math.ceil(dilate * ((dilate_tau - i) / dilate_tau)), 2)
                         if name in inflate_settings:
                             dilate = dilate / 2
+                        print(f"{name}: {dilate} {i < dilate_tau}")
                         module.forward = ReDilateConvProcessor(
                             module, dilate, mode='bilinear', activate=i < dilate_tau
                         )
@@ -289,6 +289,7 @@ def pipeline_processor(
             return image, has_nsfw_concept
 
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+
     return forward
 
 
@@ -300,12 +301,14 @@ def read_module_list(path):
 
 
 def read_dilate_settings(path):
+    print(f"Reading dilation settings")
     dilate_settings = dict()
     with open(path, 'r') as f:
         raw_lines = f.readlines()
         for raw_line in raw_lines:
-            name, dilate = raw_line.split(' ')
-            dilate_settings[name] = dilate
+            name, dilate = raw_line.split(':')
+            dilate_settings[name] = float(dilate)
+            print(f"{name} : {dilate_settings[name]}")
     return dilate_settings
 
 
@@ -314,12 +317,9 @@ def main():
     logging_dir = os.path.join(args.logging_dir)
     config = OmegaConf.load(args.config)
 
-    accelerator_project_config = ProjectConfiguration(
-        total_limit=args.checkpoints_total_limit, logging_dir=logging_dir)
+    accelerator_project_config = ProjectConfiguration(logging_dir=logging_dir)
     accelerator = Accelerator(
-        gradient_accumulation_steps=args.gradient_accumulation_steps,
         mixed_precision=args.mixed_precision,
-        log_with=args.report_to,
         project_config=accelerator_project_config,
     )
     weight_dtype = torch.float32
@@ -384,7 +384,7 @@ def main():
             (i + 1) * inference_batch_size, len(validation_prompt))]
 
         for n in range(config.num_iters_per_prompt):
-            set_seed(config.seed + n)
+            set_seed(args.seed + n)
 
             latents = torch.randn(
                 (len(output_prompts), 4, config.latent_height, config.latent_width),
