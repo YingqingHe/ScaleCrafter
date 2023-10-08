@@ -1,0 +1,13 @@
+ndcfg_tau: 0
+dilate_tau: 25
+inflate_tau: 25
+dilate_settings: ~
+inflate_settings: ~
+ndcfg_dilate_settings: ~
+#inflate_transform: /apdcephfs/share_1290939/shaoshuyang/benchmarks/addm/res/R20to1.mat
+inflate_transform: ~
+progressive: true
+num_inference_steps: 50
+inference_batch_size: 4
+latent_height: 128
+latent_width: 128

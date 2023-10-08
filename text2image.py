@@ -51,7 +51,7 @@ def parse_args():
         help="The directory where the downloaded models and datasets will be stored.",
     )
     parser.add_argument("--seed", type=int, default=23, help="A seed for reproducible training.")
-    parser.add_argument("--config", type=str, default="./configs/sd1.5_1024x1024.yaml")
+    parser.add_argument("--config", type=str, default="./configs/sd1.5_1024x1024.txt")
     parser.add_argument(
         "--logging_dir",
         type=str,

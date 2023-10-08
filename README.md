@@ -38,7 +38,7 @@ pip install -r requirements.txt
 
 ## 💫 Inference
 
-### Higher-resolution generation with diffusers script
+### Text-to-image higher-resolution generation with diffusers script
 ### stable-diffusion xl v1.0 base 
 ```bash
 # 2048x2048 (4x) generation
@@ -70,7 +70,7 @@ python text2image.py \
 --pretrained_model_name_or_path runwayml/stable-diffusion-v1-5 \
 --validation_prompt "a professional photograph of an astronaut riding a horse" \
 --seed 23 \
---config ./configs/sd1.5_1024x1024.yaml \
+--config ./configs/sd1.5_1024x1024.txt \
 --logging_dir ${your-logging-dir}
 
 # sd v2.1 1024x1024 (4x) generation
@@ -86,6 +86,8 @@ To generate in other resolutions please use the following config files:
 + 1280x1280: `./configs/sd1.5_1280x1280.yaml` `./configs/sd2.1_1280x1280.yaml`
 + 2048x1024: `./configs/sd1.5_2048x1024.yaml` `./configs/sd2.1_2048x1024.yaml`
 + 2048x2048: `./configs/sd1.5_2048x2048.yaml` `./configs/sd2.1_2048x2048.yaml`
+
+Please see the instructions above to use your customized text prompt.
 
 ---
 
