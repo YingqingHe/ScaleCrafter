@@ -450,6 +450,16 @@ def read_dilate_settings(path):
     return dilate_settings
 
 
+def get_depth_map(image, depth_estimator):
+    image = depth_estimator(image)["depth"]
+    image = np.array(image)
+    image = image[:, :, None]
+    image = np.concatenate([image, image, image], axis=2)
+    detected_map = torch.from_numpy(image).float() / 255.0
+    depth_map = detected_map.permute(2, 0, 1)
+    return depth_map
+
+
 def main():
     args = parse_args()
     logging_dir = os.path.join(args.logging_dir)
@@ -537,27 +547,12 @@ def main():
         )
 
         # Read controlnet input image
-        output_images = list()
+        output_images, output_depths = list(), list()
         for path in paths:
-            image = np.array(load_image(path))
-            low_threshold = 100
-            high_threshold = 200
-
-            image = cv2.Canny(image, low_threshold, high_threshold)
-            image = image[:, :, None]
-            image = np.concatenate([image, image, image], axis=2)
-            canny_image = Image.fromarray(image)
-            output_images.append(canny_image)
-            # else:
-            #     def get_depth_map(image, depth_estimator):
-            #         image = depth_estimator(image)["depth"]
-            #         image = np.array(image)
-            #         image = image[:, :, None]
-            #         image = np.concatenate([image, image, image], axis=2)
-            #         detected_map = torch.from_numpy(image).float() / 255.0
-            #         depth_map = detected_map.permute(2, 0, 1)
-            #         return depth_map
-            #     depth_map = get_depth_map(image, depth_estimator).unsqueeze(0).to(device="cuda", dtype=weight_dtype)
+            image = np.array(load_image(path).resize((config.pixel_height, config.pixel_width)))
+            output_images.append(image)
+            depth_map = get_depth_map(image, depth_estimator).unsqueeze(0).to(device="cuda", dtype=weight_dtype)
+            output_depths.append(depth_map)
 
         for n in range(config.num_iters_per_prompt):
             set_seed(args.seed + n)
@@ -582,6 +577,7 @@ def main():
             images = pipeline.forward(
                 output_prompts,
                 image=output_images,
+                control_image=output_depths,
                 num_inference_steps=config.num_inference_steps,
                 generator=None,
                 latents=latents

@@ -480,7 +480,7 @@ def main():
     unet = UNet2DConditionModel.from_pretrained(
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, torch_dtype=weight_dtype
     )
-    controlnet = ControlNetModel.from_pretrained(args.controlnet_model_name_or_path)
+    controlnet = ControlNetModel.from_pretrained(args.controlnet_model_name_or_path, torch_dtype=weight_dtype)
     noise_scheduler = DDIMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
     pipeline = StableDiffusionControlNetPipeline(
         vae=vae,
@@ -519,7 +519,7 @@ def main():
         validation_prompt = [args.validation_prompt, ]
 
     print(f"Using image {args.image_path}")
-    if os.path.isfile(args.image_path):
+    if args.image_path.endswith('.txt'):
         with open(args.image_path, 'r') as f:
             image_path = f.readlines()
             image_path = [line.strip() for line in image_path]
@@ -538,7 +538,7 @@ def main():
         # Read controlnet input image
         output_images = list()
         for path in paths:
-            image = np.array(load_image(path))
+            image = np.array(load_image(path).resize((config.pixel_height, config.pixel_width)))
             low_threshold = 100
             high_threshold = 200
 
