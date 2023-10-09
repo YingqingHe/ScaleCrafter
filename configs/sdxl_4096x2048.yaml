@@ -4,7 +4,8 @@ inflate_tau: 0
 sdedit_tau: 0
 dilate_settings: ./assets/dilate_settings/sdxl_4096x2048.txt
 inflate_settings: ~
-ndcfg_dilate_settings: ./assets/ndcfg_dilate_settings/sdxl_4096x2048.txt
+#ndcfg_dilate_settings: ./assets/ndcfg_dilate_settings/sdxl_4096x2048.txt
+ndcfg_dilate_settings: ~
 inflate_transform: ~
 progressive: false
 num_inference_steps: 50
