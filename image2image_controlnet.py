@@ -1,24 +1,30 @@
 import argparse
 import copy
 import math
+import cv2
 import os
 from typing import Optional
+from PIL import Image
 
 import torch
 import scipy
+import numpy as np
 import torch.utils.checkpoint
 from omegaconf import OmegaConf
 from accelerate import Accelerator
 from accelerate.logging import get_logger
 from accelerate.utils import ProjectConfiguration, set_seed
 from transformers import CLIPTextModel, CLIPTokenizer
-
+from transformers import pipeline as pipe
+from diffusers.utils.torch_utils import is_compiled_module
 from diffusers import (
-    AutoencoderKL, UNet2DConditionModel, DDIMScheduler, StableDiffusionPipeline
+    AutoencoderKL, UNet2DConditionModel, ControlNetModel, DDIMScheduler, StableDiffusionControlNetPipeline
 )
+from diffusers.pipelines.controlnet import MultiControlNetModel
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from model import ReDilateConvProcessor, inflate_kernels
+from diffusers.utils import load_image
 
 logger = get_logger(__name__, log_level="INFO")
 
@@ -32,6 +38,12 @@ def parse_args():
         help="Path to pretrained model or model identifier from huggingface.co/models.",
     )
     parser.add_argument(
+        "--controlnet_model_name_or_path",
+        type=str,
+        default="lllyasviel/sd-controlnet-canny",
+        help="Path to pretrained controlnet or controlnet identifier from huggingface.co/models.",
+    )
+    parser.add_argument(
         "--revision",
         type=str,
         default=None,
@@ -42,6 +54,11 @@ def parse_args():
         "--validation_prompt", type=str,
         default="a professional photograph of an astronaut riding a horse",
         help="A prompt that is sampled during training for inference."
+    )
+    parser.add_argument(
+        "--image_path", type=str,
+        default="",
+        help="A image path used for inference."
     )
     parser.add_argument(
         "--cache_dir",
@@ -98,6 +115,7 @@ def pipeline_processor(
     @torch.no_grad()
     def forward(
             prompt=None,
+            image=None,
             height: Optional[int] = None,
             width: Optional[int] = None,
             num_inference_steps: int = 50,
@@ -114,15 +132,35 @@ def pipeline_processor(
             callback=None,
             callback_steps: int = 1,
             cross_attention_kwargs=None,
-            guidance_rescale: float = 0.0,
+            controlnet_conditioning_scale=1.0,
+            guess_mode: bool = False,
+            control_guidance_start=0.0,
+            control_guidance_end=1.0,
     ):
-        # 0. Default height and width to unet
-        height = height or self.unet.config.sample_size * self.vae_scale_factor
-        width = width or self.unet.config.sample_size * self.vae_scale_factor
+        controlnet = self.controlnet._orig_mod if is_compiled_module(self.controlnet) else self.controlnet
+
+        # align format for control guidance
+        if not isinstance(control_guidance_start, list) and isinstance(control_guidance_end, list):
+            control_guidance_start = len(control_guidance_end) * [control_guidance_start]
+        elif not isinstance(control_guidance_end, list) and isinstance(control_guidance_start, list):
+            control_guidance_end = len(control_guidance_start) * [control_guidance_end]
+        elif not isinstance(control_guidance_start, list) and not isinstance(control_guidance_end, list):
+            mult = len(controlnet.nets) if isinstance(controlnet, MultiControlNetModel) else 1
+            control_guidance_start, control_guidance_end = mult * [control_guidance_start], mult * [
+                control_guidance_end
+            ]
 
         # 1. Check inputs. Raise error if not correct
         self.check_inputs(
-            prompt, height, width, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds
+            prompt,
+            image,
+            callback_steps,
+            negative_prompt,
+            prompt_embeds,
+            negative_prompt_embeds,
+            controlnet_conditioning_scale,
+            control_guidance_start,
+            control_guidance_end,
         )
 
         # 2. Define call parameters
@@ -139,6 +177,16 @@ def pipeline_processor(
         # corresponds to doing no classifier free guidance.
         do_classifier_free_guidance = guidance_scale > 1.0
 
+        if isinstance(controlnet, MultiControlNetModel) and isinstance(controlnet_conditioning_scale, float):
+            controlnet_conditioning_scale = [controlnet_conditioning_scale] * len(controlnet.nets)
+
+        global_pool_conditions = (
+            controlnet.config.global_pool_conditions
+            if isinstance(controlnet, ControlNetModel)
+            else controlnet.nets[0].config.global_pool_conditions
+        )
+        guess_mode = guess_mode or global_pool_conditions
+
         # 3. Encode input prompt
         text_encoder_lora_scale = (
             cross_attention_kwargs.get("scale", None) if cross_attention_kwargs is not None else None
@@ -154,11 +202,48 @@ def pipeline_processor(
             lora_scale=text_encoder_lora_scale,
         )
 
-        # 4. Prepare timesteps
+        # 4. Prepare image
+        if isinstance(controlnet, ControlNetModel):
+            image = self.prepare_image(
+                image=image,
+                width=width,
+                height=height,
+                batch_size=batch_size * num_images_per_prompt,
+                num_images_per_prompt=num_images_per_prompt,
+                device=device,
+                dtype=controlnet.dtype,
+                do_classifier_free_guidance=do_classifier_free_guidance,
+                guess_mode=guess_mode,
+            )
+            height, width = image.shape[-2:]
+        elif isinstance(controlnet, MultiControlNetModel):
+            images = []
+
+            for image_ in image:
+                image_ = self.prepare_image(
+                    image=image_,
+                    width=width,
+                    height=height,
+                    batch_size=batch_size * num_images_per_prompt,
+                    num_images_per_prompt=num_images_per_prompt,
+                    device=device,
+                    dtype=controlnet.dtype,
+                    do_classifier_free_guidance=do_classifier_free_guidance,
+                    guess_mode=guess_mode,
+                )
+
+                images.append(image_)
+
+            image = images
+            height, width = image[0].shape[-2:]
+        else:
+            assert False
+
+        # 5. Prepare timesteps
         self.scheduler.set_timesteps(num_inference_steps, device=device)
         timesteps = self.scheduler.timesteps
 
-        # 5. Prepare latent variables
+        # 6. Prepare latent variables
         num_channels_latents = self.unet.in_channels
         latents = self.prepare_latents(
             batch_size * num_images_per_prompt,
@@ -171,10 +256,19 @@ def pipeline_processor(
             latents,
         )
 
-        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        # 7. Prepare extra step kwargs
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # 7. Denoising loop
+        # 7.1 Create tensor stating which controlnets to keep
+        controlnet_keep = []
+        for i in range(len(timesteps)):
+            keeps = [
+                1.0 - float(i / len(timesteps) < s or (i + 1) / len(timesteps) > e)
+                for s, e in zip(control_guidance_start, control_guidance_end)
+            ]
+            controlnet_keep.append(keeps[0] if isinstance(controlnet, ControlNetModel) else keeps)
+
+        # 8. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         unet_inflate, unet_inflate_vanilla = None, None
         if transform is not None:
@@ -191,6 +285,41 @@ def pipeline_processor(
                 # expand the latents if we are doing classifier free guidance
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+
+                # controlnet(s) inference
+                if guess_mode and do_classifier_free_guidance:
+                    # Infer ControlNet only for the conditional batch.
+                    control_model_input = latents
+                    control_model_input = self.scheduler.scale_model_input(control_model_input, t)
+                    controlnet_prompt_embeds = prompt_embeds.chunk(2)[1]
+                else:
+                    control_model_input = latent_model_input
+                    controlnet_prompt_embeds = prompt_embeds
+
+                if isinstance(controlnet_keep[i], list):
+                    cond_scale = [c * s for c, s in zip(controlnet_conditioning_scale, controlnet_keep[i])]
+                else:
+                    controlnet_cond_scale = controlnet_conditioning_scale
+                    if isinstance(controlnet_cond_scale, list):
+                        controlnet_cond_scale = controlnet_cond_scale[0]
+                    cond_scale = controlnet_cond_scale * controlnet_keep[i]
+
+                down_block_res_samples, mid_block_res_sample = self.controlnet(
+                    control_model_input,
+                    t,
+                    encoder_hidden_states=controlnet_prompt_embeds,
+                    controlnet_cond=image,
+                    conditioning_scale=cond_scale,
+                    guess_mode=guess_mode,
+                    return_dict=False,
+                )
+
+                if guess_mode and do_classifier_free_guidance:
+                    # Infered ControlNet only for the conditional batch.
+                    # To apply the output of ControlNet to both the unconditional and conditional batches,
+                    # add 0 to the unconditional batch to keep it unchanged.
+                    down_block_res_samples = [torch.cat([torch.zeros_like(d), d]) for d in down_block_res_samples]
+                    mid_block_res_sample = torch.cat([torch.zeros_like(mid_block_res_sample), mid_block_res_sample])
 
                 unet = unet_inflate if i < inflate_tau and transform is not None else self.unet
                 backup_forwards = dict()
@@ -213,7 +342,10 @@ def pipeline_processor(
                     t,
                     encoder_hidden_states=prompt_embeds,
                     cross_attention_kwargs=cross_attention_kwargs,
-                ).sample
+                    down_block_additional_residuals=down_block_res_samples,
+                    mid_block_additional_residual=mid_block_res_sample,
+                    return_dict=False,
+                )[0]
 
                 for name, module in unet.named_modules():
                     if name in backup_forwards.keys():
@@ -240,7 +372,10 @@ def pipeline_processor(
                         t,
                         encoder_hidden_states=prompt_embeds,
                         cross_attention_kwargs=cross_attention_kwargs,
-                    ).sample
+                        down_block_additional_residuals=down_block_res_samples,
+                        mid_block_additional_residual=mid_block_res_sample,
+                        return_dict=False,
+                    )[0]
 
                     for name, module in unet.named_modules():
                         if name in backup_forwards.keys():
@@ -255,10 +390,6 @@ def pipeline_processor(
                     else:
                         noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
-                if do_classifier_free_guidance and guidance_rescale > 0.0:
-                    # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
-
                 # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
 
@@ -267,6 +398,13 @@ def pipeline_processor(
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
+
+        # If we do sequential model offloading, let's offload unet and controlnet
+        # manually for max memory savings
+        if hasattr(self, "final_offload_hook") and self.final_offload_hook is not None:
+            self.unet.to("cpu")
+            self.controlnet.to("cpu")
+            torch.cuda.empty_cache()
 
         if not output_type == "latent":
             image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
@@ -287,10 +425,9 @@ def pipeline_processor(
             self.final_offload_hook.offload()
 
         if not return_dict:
-            return image, has_nsfw_concept
+            return (image, has_nsfw_concept)
 
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
-
     return forward
 
 
@@ -343,12 +480,14 @@ def main():
     unet = UNet2DConditionModel.from_pretrained(
         args.pretrained_model_name_or_path, subfolder="unet", revision=args.revision, torch_dtype=weight_dtype
     )
+    controlnet = ControlNetModel.from_pretrained(args.controlnet_model_name_or_path)
     noise_scheduler = DDIMScheduler.from_pretrained(args.pretrained_model_name_or_path, subfolder="scheduler")
-    pipeline = StableDiffusionPipeline(
+    pipeline = StableDiffusionControlNetPipeline(
         vae=vae,
         text_encoder=text_encoder,
         tokenizer=tokenizer,
         unet=unet,
+        controlnet=controlnet,
         scheduler=noise_scheduler,
         feature_extractor=None,
         safety_checker=None
@@ -369,6 +508,7 @@ def main():
         transform = None
 
     unet.eval()
+    controlnet.eval()
     total_num = 0
     print(f"Using prompt {args.validation_prompt}")
     if os.path.isfile(args.validation_prompt):
@@ -378,11 +518,46 @@ def main():
     else:
         validation_prompt = [args.validation_prompt, ]
 
+    print(f"Using image {args.image_path}")
+    if os.path.isfile(args.image_path):
+        with open(args.image_path, 'r') as f:
+            image_path = f.readlines()
+            image_path = [line.strip() for line in image_path]
+    else:
+        image_path = [args.image_path, ]
+    assert len(image_path) == len(validation_prompt)
+    depth_estimator = pipe("depth-estimation") if not config.control_canny else None
+
     inference_batch_size = config.inference_batch_size
     num_batches = math.ceil(len(validation_prompt) / inference_batch_size)
     for i in range(num_batches):
-        output_prompts = validation_prompt[i * inference_batch_size:min(
-            (i + 1) * inference_batch_size, len(validation_prompt))]
+        output_prompts, paths = (
+            validation_prompt[i * inference_batch_size:min((i + 1) * inference_batch_size, len(validation_prompt))],
+            image_path[i * inference_batch_size:min((i + 1) * inference_batch_size, len(image_path))]
+        )
+
+        # Read controlnet input image
+        output_images = list()
+        for path in paths:
+            image = np.array(load_image(path))
+            low_threshold = 100
+            high_threshold = 200
+
+            image = cv2.Canny(image, low_threshold, high_threshold)
+            image = image[:, :, None]
+            image = np.concatenate([image, image, image], axis=2)
+            canny_image = Image.fromarray(image)
+            output_images.append(canny_image)
+            # else:
+            #     def get_depth_map(image, depth_estimator):
+            #         image = depth_estimator(image)["depth"]
+            #         image = np.array(image)
+            #         image = image[:, :, None]
+            #         image = np.concatenate([image, image, image], axis=2)
+            #         detected_map = torch.from_numpy(image).float() / 255.0
+            #         depth_map = detected_map.permute(2, 0, 1)
+            #         return depth_map
+            #     depth_map = get_depth_map(image, depth_estimator).unsqueeze(0).to(device="cuda", dtype=weight_dtype)
 
         for n in range(config.num_iters_per_prompt):
             set_seed(args.seed + n)
@@ -403,8 +578,14 @@ def main():
                 transform=transform,
                 progressive=config.progressive,
             )
+
             images = pipeline.forward(
-                output_prompts, num_inference_steps=config.num_inference_steps, generator=None, latents=latents).images
+                output_prompts,
+                image=output_images,
+                num_inference_steps=config.num_inference_steps,
+                generator=None,
+                latents=latents
+            ).images
 
             os.makedirs(os.path.join(logging_dir), exist_ok=True)
             for image, prompt in zip(images, output_prompts):

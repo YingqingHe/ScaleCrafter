@@ -132,6 +132,9 @@ def pipeline_processor(
         height = height or self.unet.config.sample_size * self.vae_scale_factor
         width = width or self.unet.config.sample_size * self.vae_scale_factor
 
+        original_size = original_size or (height, width)
+        target_size = target_size or (height, width)
+
         # 1. Check inputs. Raise error if not correct
         self.check_inputs(
             prompt,
@@ -260,7 +263,7 @@ def pipeline_processor(
                         dilate = dilate_settings[name]
                         if progressive:
                             dilate = max(math.ceil(dilate * ((dilate_tau - i) / dilate_tau)), 2)
-                        if name in inflate_settings:
+                        if i < inflate_tau and name in inflate_settings:
                             dilate = dilate / 2
                         module.forward = ReDilateConvProcessor(
                             module, dilate, mode='bilinear', activate=i < dilate_tau
@@ -290,7 +293,7 @@ def pipeline_processor(
                             dilate = ndcfg_dilate_settings[name]
                             if progressive:
                                 dilate = max(math.ceil(dilate * ((ndcfg_tau - i) / ndcfg_tau)), 2)
-                            if name in inflate_settings:
+                            if i < inflate_tau and name in inflate_settings:
                                 dilate = dilate / 2
                             module.forward = ReDilateConvProcessor(
                                 module, dilate, mode='bilinear', activate=i < ndcfg_tau
