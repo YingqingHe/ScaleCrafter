@@ -603,8 +603,16 @@ def main():
         )
 
         # Read controlnet input image
-        output_images = list()
+        output_images, pixel_height, pixel_width, latent_height, latent_width = (
+            list(), None, None, None, None
+        )
         for path in paths:
+            image = load_image(path)
+            if pixel_height is not None:
+                assert pixel_height == image.height and pixel_width == image.width
+            else:
+                pixel_height, pixel_width = image.height, image.width
+
             image = np.array(load_image(path).resize((config.pixel_height, config.pixel_width)))
             low_threshold = 100
             high_threshold = 200
@@ -635,6 +643,7 @@ def main():
             )
             images = pipeline.forward(
                 output_prompts,
+                image=output_images,
                 num_inference_steps=config.num_inference_steps,
                 generator=None,
                 latents=latents,
