@@ -137,7 +137,7 @@ def pipeline_processor(
         callback=None,
         callback_steps: int = 1,
         cross_attention_kwargs=None,
-        controlnet_conditioning_scale=1.0,
+        controlnet_conditioning_scale=0.5,
         guess_mode: bool = False,
         control_guidance_start=0.0,
         control_guidance_end=1.0,
@@ -609,11 +609,13 @@ def main():
         for path in paths:
             image = load_image(path)
             if pixel_height is not None:
-                assert pixel_height == image.height and pixel_width == image.width
+                assert pixel_height == (image.height // 64) * 64 \
+                       and pixel_width == (image.width // 64) * 64
             else:
-                pixel_height, pixel_width = image.height, image.width
+                latent_height, latent_width = (image.height // 64) * 8, (image.width // 64) * 8
+                pixel_height, pixel_width = latent_height * 8, latent_width * 8
 
-            image = np.array(load_image(path).resize((config.pixel_height, config.pixel_width)))
+            image = np.array(load_image(path).resize((pixel_height, pixel_width)))
             low_threshold = 100
             high_threshold = 200
 
@@ -626,7 +628,7 @@ def main():
             set_seed(args.seed + n)
 
             latents = torch.randn(
-                (len(output_prompts), 4, config.latent_height, config.latent_width),
+                (len(output_prompts), 4, latent_height, latent_width),
                 device=accelerator.device, dtype=weight_dtype
             )
             pipeline.enable_vae_tiling()
@@ -647,8 +649,8 @@ def main():
                 num_inference_steps=config.num_inference_steps,
                 generator=None,
                 latents=latents,
-                height=config.pixel_height,
-                width=config.pixel_width
+                height=pixel_height,
+                width=pixel_width
             ).images
 
             os.makedirs(os.path.join(logging_dir), exist_ok=True)
