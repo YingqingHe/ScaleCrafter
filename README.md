@@ -29,7 +29,7 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](), [Haoxin Che
 
 ## ⚙️ Setup
 ```bash
-conda create -n scalecrafter python=xxx
+conda create -n scalecrafter python=3.8
 conda activate scalecrafter
 pip install -r requirements.txt
 ```
