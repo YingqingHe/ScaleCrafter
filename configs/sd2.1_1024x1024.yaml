@@ -1,5 +1,5 @@
 ndcfg_tau: 0
-dilate_tau: 30
+dilate_tau: 20
 inflate_tau: 0
 dilate_settings: ./assets/dilate_settings/sd2.1_1024x1024.txt
 inflate_settings: ~
