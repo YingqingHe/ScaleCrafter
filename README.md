@@ -22,7 +22,7 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](), [Haoxin Che
 
 
 ## 📝 Changelog
-- __[2023.10.09]__: 🔥 Release paper and source code.
+- __[2023.10.12]__: 🔥 Release paper and source code.
 <br>
 
 <!-- ## ⏳ TODO
