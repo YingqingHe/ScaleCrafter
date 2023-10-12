@@ -12,15 +12,22 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github
 [Yong Zhang<sup>#](https://yzhang2016.github.io), [Xintao Wang](https://xinntao.github.io/), [Ran He](https://rhe-web.github.io/), [Qifeng Chen<sup>#](https://cqf.io/), and [Ying Shan](https://scholar.google.com/citations?hl=zh-CN&user=4oXBp9UAAAAJ)**_
 
 (* first author, # corresponding author)
-
+<img src=assets/pics/video.gif>
+Input: "A beautiful girl on a boat"; Resolution: 2048 x 1152.
+<img src=assets/pics/img.jpg>
+Input: "Miniature house with plants in the potted area, hyper realism, dramatic ambient lighting, high detail"; Resolution: 4096 x 4096.
+<img src=assets/pics/anyres.jpg>
+Arbitary higher-resolution generation based on SD 1.5.
 </div>
+
+## 🤗 TL; DR
+ScaleCrafter is capable of generating images with resolution of <i>4096 x 4096</i> and results with resolution of <i>2048 x 1152</i> based on pre-trained diffusion models on a lower resolution. Notably, our approach needs <i>no extra training/optimziation</i>.
 
 ## :notes: Notes
 - Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks.
 - If you have any questions or comments, we are open for discussion.
-## 🔆 Abstract
-<b>TL; DR: 🤗🤗🤗 **ScaleCrafter:** A tuning-free approach that can generate images with resolution of 4096x4096 based on pre-trained diffusion models, which is 16 times higher than the original training resolution.</b>
 
+## 🔆 Abstract
 > In this work, we investigate the capability of generating images from pre-trained diffusion models at much higher resolutions than the training image sizes. In addition, the generated images should have arbitrary image aspect ratios. When generating images directly at a higher resolution, 1024 x 1024, with the pre-trained Stable Diffusion using training images of resolution 512 x 512, we observe persistent problems of object repetition and unreasonable object structures. Existing works for higher-resolution generation, such as attention-based and joint-diffusion approaches, cannot well address these issues. As a new perspective, we examine the structural components of the U-Net in diffusion models and identify the crucial cause as the limited perception field of convolutional kernels. Based on this key observation, we propose a simple yet effective re-dilation that can dynamically adjust the convolutional perception field during inference. We further propose the dispersed convolution and noise-damped classifier-free guidance, which can enable ultra-high-resolution image generation (e.g., 4096 x 4096). Notably, our approach does not require any training or optimization. Extensive experiments demonstrate that our approach can address the repetition issue well and achieve state-of-the-art performance on higher-resolution image synthesis, especially in texture details. Our work also suggests that a pre-trained diffusion model trained on low-resolution images can be directly used for high-resolution visual generation without further tuning, which may provide insights for future research on ultra-high-resolution image and video synthesis.
 
 
