@@ -8,13 +8,16 @@
  <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/ptl version-code-blue'></a> 
  
 
-_**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](), [Haoxin Chen](), [Xiaodong Cun](http://vinthony.github.io/), [Menghan Xia](https://menghanxia.github.io/), <br> 
-[Yong Zhang<sup>#](https://yzhang2016.github.io), [Xintao Wang](https://xinntao.github.io/), [Ran He](), [Qifeng Chen<sup>#](https://cqf.io/), and [Ying Shan](https://scholar.google.com/citations?hl=zh-CN&user=4oXBp9UAAAAJ)**_
+_**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github.com/ssyang1999), [Haoxin Chen](https://github.com/scutpaul), [Xiaodong Cun](http://vinthony.github.io/), [Menghan Xia](https://menghanxia.github.io/), <br> 
+[Yong Zhang<sup>#](https://yzhang2016.github.io), [Xintao Wang](https://xinntao.github.io/), [Ran He](https://rhe-web.github.io/), [Qifeng Chen<sup>#](https://cqf.io/), and [Ying Shan](https://scholar.google.com/citations?hl=zh-CN&user=4oXBp9UAAAAJ)**_
 
 (* first author, # corresponding author)
 
 </div>
 
+## 🔆 Notes
+- Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks.
+- If you have any questions or comments, we are open for discussion.
 ## 🔆 Abstract
 <b>TL; DR: 🤗🤗🤗 **ScaleCrafter:** A tuning-free approach that can generate images with resolution of 4096x4096 based on pre-trained diffusion models, which is 16 times higher than the original training resolution.</b>
 
@@ -22,7 +25,8 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](), [Haoxin Che
 
 
 ## 📝 Changelog
-- __[2023.10.09]__: 🔥 Release paper and source code.
+- __[2023.10.09]__: 🔥 Release paper.
+- __[2023.10.09]__: 🔥 Release source code of both diffuser version and lightning version.
 <br>
 
 <!-- ## ⏳ TODO
