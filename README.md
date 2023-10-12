@@ -15,7 +15,7 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github
 
 </div>
 
-## 🔆 Notes
+## :notes: Notes
 - Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks.
 - If you have any questions or comments, we are open for discussion.
 ## 🔆 Abstract
