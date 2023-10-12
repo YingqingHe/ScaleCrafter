@@ -17,7 +17,7 @@ Input: "A beautiful girl on a boat"; Resolution: 2048 x 1152.
 <img src=assets/pics/img.jpg>
 Input: "Miniature house with plants in the potted area, hyper realism, dramatic ambient lighting, high detail"; Resolution: 4096 x 4096.
 <img src=assets/pics/anyres.jpg>
-Arbitary higher-resolution generation based on SD 1.5.
+Arbitary higher-resolution generation based on SD 2.1.
 </div>
 
 ## 🤗 TL; DR
