@@ -25,8 +25,8 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github
 
 
 ## 📝 Changelog
-- __[2023.10.09]__: 🔥 Release paper.
-- __[2023.10.09]__: 🔥 Release source code of both diffuser version and lightning version.
+- __[2023.10.12]__: 🔥 Release paper.
+- __[2023.10.12]__: 🔥 Release source code of both diffuser version and lightning version.
 <br>
 
 <!-- ## ⏳ TODO
