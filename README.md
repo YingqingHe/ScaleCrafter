@@ -3,7 +3,7 @@
 
 <div align="center">
 
- <a href=''><img src='https://img.shields.io/badge/ArXiv-2305.18247-red'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ <a href='https://arxiv.org/abs/2310.07702'><img src='https://img.shields.io/badge/ArXiv-2310.07702-red'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
  <a href='https://yingqinghe.github.io/scalecrafter/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
  <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/ptl version-code-blue'></a> 
  
@@ -12,12 +12,16 @@ _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github
 [Yong Zhang<sup>#](https://yzhang2016.github.io), [Xintao Wang](https://xinntao.github.io/), [Ran He](https://rhe-web.github.io/), [Qifeng Chen<sup>#](https://cqf.io/), and [Ying Shan](https://scholar.google.com/citations?hl=zh-CN&user=4oXBp9UAAAAJ)**_
 
 (* first author, # corresponding author)
+
 <img src=assets/pics/video.gif>
 Input: "A beautiful girl on a boat"; Resolution: 2048 x 1152.
+<br><br>
 <img src=assets/pics/img.jpg>
 Input: "Miniature house with plants in the potted area, hyper realism, dramatic ambient lighting, high detail"; Resolution: 4096 x 4096.
+<br><br>
 <img src=assets/pics/anyres.jpg>
 Arbitary higher-resolution generation based on SD 2.1.
+<br><br>
 </div>
 
 ## 🤗 TL; DR
@@ -106,7 +110,14 @@ Please see the instructions above to use your customized text prompt.
 
 ## 😉 Citation
 ```bib
-TODO
+@article{he2023scalecrafter,
+      title={ScaleCrafter: Tuning-free Higher-Resolution Visual Generation with Diffusion Models}, 
+      author={Yingqing He and Shaoshu Yang and Haoxin Chen and Xiaodong Cun and Menghan Xia and Yong Zhang and Xintao Wang and Ran He and Qifeng Chen and Ying Shan},
+      year={2023},
+      eprint={2310.07702},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV}
+}
 ```
 
 ## 📭 Contact
