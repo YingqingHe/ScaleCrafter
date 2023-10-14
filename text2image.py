@@ -18,6 +18,7 @@ from diffusers import (
 )
 from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
+from sync_tiled_decode import apply_sync_tiled_decode, apply_tiled_processors
 from model import ReDilateConvProcessor, inflate_kernels
 
 logger = get_logger(__name__, log_level="INFO")
@@ -202,7 +203,7 @@ def pipeline_processor(
                             dilate = max(math.ceil(dilate * ((dilate_tau - i) / dilate_tau)), 2)
                         if i < inflate_tau and name in inflate_settings:
                             dilate = dilate / 2
-                        print(f"{name}: {dilate} {i < dilate_tau}")
+                        # print(f"{name}: {dilate} {i < dilate_tau}")
                         module.forward = ReDilateConvProcessor(
                             module, dilate, mode='bilinear', activate=i < dilate_tau
                         )
@@ -230,7 +231,7 @@ def pipeline_processor(
                                 dilate = max(math.ceil(dilate * ((ndcfg_tau - i) / ndcfg_tau)), 2)
                             if i < inflate_tau and name in inflate_settings:
                                 dilate = dilate / 2
-                            print(f"{name}: {dilate} {i < dilate_tau}")
+                            # print(f"{name}: {dilate} {i < dilate_tau}")
                             module.forward = ReDilateConvProcessor(
                                 module, dilate, mode='bilinear', activate=i < ndcfg_tau
                             )
@@ -380,6 +381,9 @@ def main():
 
     inference_batch_size = config.inference_batch_size
     num_batches = math.ceil(len(validation_prompt) / inference_batch_size)
+    pipeline.enable_vae_tiling()
+    # apply_sync_tiled_decode(pipeline.vae)
+    # apply_tiled_processors(pipeline.vae.decoder)
     for i in range(num_batches):
         output_prompts = validation_prompt[i * inference_batch_size:min(
             (i + 1) * inference_batch_size, len(validation_prompt))]
@@ -391,7 +395,6 @@ def main():
                 (len(output_prompts), 4, config.latent_height, config.latent_width),
                 device=accelerator.device, dtype=weight_dtype
             )
-            pipeline.enable_vae_tiling()
             pipeline.forward = pipeline_processor(
                 pipeline,
                 ndcfg_tau=config.ndcfg_tau,
