@@ -5,7 +5,7 @@
 
  <a href='https://arxiv.org/abs/2310.07702'><img src='https://img.shields.io/badge/ArXiv-2310.07702-red'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
  <a href='https://yingqinghe.github.io/scalecrafter/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
- <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/ptl version-code-blue'></a> 
+ <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/lightning version-code-blue'></a> 
  
 
 _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github.com/ssyang1999), [Haoxin Chen](https://github.com/scutpaul), [Xiaodong Cun](http://vinthony.github.io/), [Menghan Xia](https://menghanxia.github.io/), <br> 
@@ -20,7 +20,7 @@ Input: "A beautiful girl on a boat"; Resolution: 2048 x 1152.
 Input: "Miniature house with plants in the potted area, hyper realism, dramatic ambient lighting, high detail"; Resolution: 4096 x 4096.
 <br><br>
 <img src=assets/pics/anyres.jpg>
-Arbitary higher-resolution generation based on SD 2.1.
+Arbitrary higher-resolution generation based on SD 2.1.
 <br><br>
 </div>
 
