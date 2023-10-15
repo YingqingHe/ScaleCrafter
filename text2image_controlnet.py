@@ -8,6 +8,7 @@ from PIL import Image
 
 import torch
 import scipy
+import glob
 import numpy as np
 import torch.utils.checkpoint
 from omegaconf import OmegaConf
@@ -510,7 +511,10 @@ def main():
 
     unet.eval()
     controlnet.eval()
-    total_num = 0
+    
+    os.makedirs(os.path.join(logging_dir), exist_ok=True)
+    total_num = len(glob.glob(os.path.join(logging_dir, '*.jpg'))) - 1
+
     print(f"Using prompt {args.validation_prompt}")
     if os.path.isfile(args.validation_prompt):
         with open(args.validation_prompt, 'r') as f:
@@ -549,7 +553,8 @@ def main():
             canny_image = Image.fromarray(image)
             output_images.append(canny_image)
         for n in range(config.num_iters_per_prompt):
-            set_seed(args.seed + n)
+            seed = args.seed + n
+            set_seed(seed)
 
             latents = torch.randn(
                 (len(output_prompts), 4, config.latent_height, config.latent_width),
@@ -576,13 +581,12 @@ def main():
                 latents=latents
             ).images
 
-            os.makedirs(os.path.join(logging_dir), exist_ok=True)
             for image, prompt in zip(images, output_prompts):
                 total_num = total_num + 1
-                image.save(fp=os.path.join(logging_dir, f"{total_num}.jpg"))
+                img_path = os.path.join(logging_dir, f"{total_num}_{prompt[:200]}_seed{seed}.jpg")
+                image.save(img_path)
                 with open(os.path.join(logging_dir, f"{total_num}.txt"), 'w') as f:
                     f.writelines([prompt, ])
-
 
 if __name__ == "__main__":
     main()
