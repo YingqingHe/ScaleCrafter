@@ -386,8 +386,8 @@ def main():
     inference_batch_size = config.inference_batch_size
     num_batches = math.ceil(len(validation_prompt) / inference_batch_size)
     pipeline.enable_vae_tiling()
-    # apply_sync_tiled_decode(pipeline.vae)
-    # apply_tiled_processors(pipeline.vae.decoder)
+    apply_sync_tiled_decode(pipeline.vae)
+    apply_tiled_processors(pipeline.vae.decoder)
     for i in range(num_batches):
         output_prompts = validation_prompt[i * inference_batch_size:min(
             (i + 1) * inference_batch_size, len(validation_prompt))]

@@ -21,11 +21,17 @@ def tiled_processor(self):  # Conv2d, Dropout, Mish, SiLU, GELU, ReLU
     backup_forward = self.forward
 
     def forward(tiles):
-        print(type(tiles))
-        print(type(self))
         assert isinstance(tiles, list)
         return [backup_forward(tile) for tile in tiles]
-        # return [backup_forward(tile) for tile in tiles]
+    return forward
+
+
+def tiled_gn_processor(self):
+    backup_forward = self.forward
+
+    def forward(tiles):
+        assert isinstance(tiles, list)
+        return [backup_forward(tile) for tile in tiles]
     return forward
 
 
@@ -33,49 +39,40 @@ def sync_tiled_gn_processor(self):  # GroupNorm
     def forward(tiles):
         used_dtype = torch.float32
         b, dtype, device = tiles[0].shape[0], tiles[0].dtype, tiles[0].device
-        shapes, tmp_tiles, num_elements = list(), list(), 0
         tiles = [tile.to(used_dtype) for tile in tiles]
-        # print(f"input tile {tiles[0][0, 0, 0, :5]}")
+        shapes, tmp_tiles, num_elements = list(), list(), 0
         for tile in tiles:
             *_, h, w = tile.shape
             shapes.append((h, w))
-            tmp_tiles.append(
-                rearrange(tile, 'b (g c) h w -> b g (c h w)', g=self.num_groups)
-            )
-            num_elements = num_elements + tile.shape[-1]
+            tmp_tile = rearrange(tile, 'b (g c) h w -> b g (c h w)', g=self.num_groups)
+            tmp_tiles.append(tmp_tile)
+            num_elements = num_elements + tmp_tile.shape[-1]
         mean, var = (
             torch.zeros((b, self.num_groups, 1), dtype=used_dtype, device=device),
             torch.zeros((b, self.num_groups, 1), dtype=used_dtype, device=device)
         )
-        # print(num_elements)
 
         for tile in tmp_tiles:
             mean = mean + tile.mean(-1, keepdim=True) * float(tile.shape[-1] / num_elements)
-            print(f"mean {mean}")
 
         for tile in tmp_tiles:
             # Unbiased variance estimation
             var = var + (
                     ((tile - mean) ** 2) * (tile.shape[-1] / (tile.shape[-1] - 1))
             ).mean(-1, keepdim=True) * float(tile.shape[-1] / num_elements)
-            print(f"var {var}")
 
         tiles = list()
-        print(f"ckpt1 {torch.isnan(tmp_tiles[0]).any()}")
         for shape, tile in zip(shapes, tmp_tiles):
             h, w = shape
             tile = rearrange((tile - mean) / (var + self.eps).sqrt(), 'b g (c h w) -> b (g c) h w', h=h, w=w)
             tiles.append(tile * self.weight.unsqueeze(-1).unsqueeze(-1) + self.bias.unsqueeze(-1).unsqueeze(-1))
-        print(f"ckpt2 {torch.isnan(tiles[0]).any()}")
         tiles = [tile.to(dtype) for tile in tiles]
-        # print(f"output tile {tiles[0][0, 0, 0, :5]}")
         return tiles
     return forward
 
 
 def tiled_resnet_processor(self):
     def forward(tiles, temb):
-        # print(f"input tile {tiles[0][0, 0, 0, :5]}")
         hidden_states = tiles
         if self.time_embedding_norm == "ada_group" or self.time_embedding_norm == "spatial":
             hidden_states = self.norm1(hidden_states, temb)
@@ -94,9 +91,7 @@ def tiled_resnet_processor(self):
             tiles = self.downsample(tiles)
             hidden_states = self.downsample(hidden_states)
 
-        # print(f"output5 tile {hidden_states[0][0, 0, 0, :5]}")
         hidden_states = self.conv1(hidden_states)
-        # print(f"output4 tile {hidden_states[0][0, 0, 0, :5]}")
 
         if self.time_emb_proj is not None:
             if not self.skip_time_act:
@@ -110,7 +105,6 @@ def tiled_resnet_processor(self):
             hidden_states = self.norm2(hidden_states, temb)
         else:
             hidden_states = self.norm2(hidden_states)
-        # print(f"output2 tile {hidden_states[0][0, 0, 0, :5]}")
 
         if temb is not None and self.time_embedding_norm == "scale_shift":
             scale, shift = torch.chunk(temb, 2, dim=1)
@@ -122,11 +116,9 @@ def tiled_resnet_processor(self):
 
         if self.conv_shortcut is not None:
             tiles = self.conv_shortcut(tiles)
-        # print(f"output3 tile {tiles[0][0, 0, 0, :5]}")
         output_tensor = [
             (tile + hidden_state) / self.output_scale_factor for (tile, hidden_state) in zip(tiles, hidden_states)
         ]
-        # print(f"output tile {output_tensor[0][0, 0, 0, :5]}")
         return output_tensor
     return forward
 
