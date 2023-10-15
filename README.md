@@ -25,7 +25,7 @@ Arbitrary higher-resolution generation based on SD 2.1.
 </div>
 
 ## 🤗 TL; DR
-ScaleCrafter is capable of generating images with resolution of <i>4096 x 4096</i> and results with resolution of <i>2048 x 1152</i> based on pre-trained diffusion models on a lower resolution. Notably, our approach needs <i>no extra training/optimziation</i>.
+ScaleCrafter is capable of generating images with a resolution of <i>4096 x 4096</i> and videos with a resolution of <i>2048 x 1152</i> based on pre-trained diffusion models on a lower resolution. Notably, our approach needs <i>no extra training/optimization</i>.
 
 ## :notes: Notes
 - Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks.
