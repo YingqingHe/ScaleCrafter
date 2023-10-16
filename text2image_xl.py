@@ -22,6 +22,8 @@ from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import resca
 from diffusers.pipelines.stable_diffusion_xl import StableDiffusionXLPipelineOutput
 from diffusers.utils.torch_utils import randn_tensor
 from model import ReDilateConvProcessor, inflate_kernels
+from free_lunch_utils import register_free_upblock2d, register_free_crossattn_upblock2d
+from sync_tiled_decode import apply_sync_tiled_decode, apply_tiled_processors
 
 
 logger = get_logger(__name__, log_level="INFO")
@@ -75,6 +77,8 @@ def parse_args():
             " flag passed with the `accelerate.launch` command. Use this argument to override the accelerate config."
         ),
     )
+    parser.add_argument("--disable_freeu", action="store_true", help="disable freeU", default=False)
+    parser.add_argument("--vae_tiling", action="store_true", help="enable vae tiling")
 
     args = parser.parse_args()
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
@@ -432,6 +436,13 @@ def main():
         scheduler=noise_scheduler,
     )
     pipeline = pipeline.to(accelerator.device)
+    if not args.disable_freeu:
+        register_free_upblock2d(pipeline, b1=1.1, b2=1.2, s1=0.6, s2=0.4)
+        register_free_crossattn_upblock2d(pipeline, b1=1.1, b2=1.2, s1=0.6, s2=0.4)
+    if args.vae_tiling:
+        pipeline.enable_vae_tiling()
+        apply_sync_tiled_decode(pipeline.vae)
+        apply_tiled_processors(pipeline.vae.decoder)
 
     dilate_settings = read_dilate_settings(config.dilate_settings) \
         if config.dilate_settings is not None else dict()

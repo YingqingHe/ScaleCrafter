@@ -21,6 +21,7 @@ from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import resca
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from sync_tiled_decode import apply_sync_tiled_decode, apply_tiled_processors
 from model import ReDilateConvProcessor, inflate_kernels
+from free_lunch_utils import register_free_upblock2d, register_free_crossattn_upblock2d
 
 logger = get_logger(__name__, log_level="INFO")
 
@@ -73,6 +74,8 @@ def parse_args():
             " flag passed with the `accelerate.launch` command. Use this argument to override the accelerate config."
         ),
     )
+    parser.add_argument("--disable_freeu", action="store_true", help="disable freeU", default=False)
+    parser.add_argument("--vae_tiling", action="store_true", help="enable vae tiling")
 
     args = parser.parse_args()
     env_local_rank = int(os.environ.get("LOCAL_RANK", -1))
@@ -356,6 +359,20 @@ def main():
         safety_checker=None
     )
     pipeline = pipeline.to(accelerator.device)
+    if not args.disable_freeu:
+        if 'sd1.5' in os.path.basename(args.config):
+            print("Base model: SD 1.5")
+            register_free_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
+            register_free_crossattn_upblock2d(pipeline, b1=1.2, b2=1.4, s1=0.9, s2=0.2)
+        elif 'sd2.1' in os.path.basename(args.config):
+            print("Base model: SD 2.1")
+            register_free_upblock2d(pipeline, b1=1.1, b2=1.2, s1=0.9, s2=0.2)
+            register_free_crossattn_upblock2d(pipeline, b1=1.1, b2=1.2, s1=0.9, s2=0.2)
+    
+    if args.vae_tiling:
+        pipeline.enable_vae_tiling()
+        apply_sync_tiled_decode(pipeline.vae)
+        apply_tiled_processors(pipeline.vae.decoder)
 
     dilate_settings = read_dilate_settings(config.dilate_settings) \
         if config.dilate_settings is not None else dict()
@@ -385,9 +402,7 @@ def main():
 
     inference_batch_size = config.inference_batch_size
     num_batches = math.ceil(len(validation_prompt) / inference_batch_size)
-    pipeline.enable_vae_tiling()
-    apply_sync_tiled_decode(pipeline.vae)
-    apply_tiled_processors(pipeline.vae.decoder)
+
     for i in range(num_batches):
         output_prompts = validation_prompt[i * inference_batch_size:min(
             (i + 1) * inference_batch_size, len(validation_prompt))]
