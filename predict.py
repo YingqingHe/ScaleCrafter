@@ -136,10 +136,6 @@ class Predictor(BasePredictor):
         width: int = Input(
             description="Width of output image. Lower the setting if out of memory.",
             choices=[
-                512,
-                640,
-                768,
-                896,
                 1024,
                 1280,
                 1536,
@@ -157,10 +153,6 @@ class Predictor(BasePredictor):
         height: int = Input(
             description="Height of output image. Lower the setting if out of memory.",
             choices=[
-                512,
-                640,
-                768,
-                896,
                 1024,
                 1280,
                 1536,
@@ -181,8 +173,8 @@ class Predictor(BasePredictor):
         seed: int = Input(
             description="Random seed. Leave blank to randomize the seed", default=None
         ),
-        dilate_settings: Path = Input(
-            description="You can provide a custom setting to specify the layer to use our method and its dilation scale, for example see assets/dilate_settings/sdxl_4096x4096.txt",
+        dilate_scale: str = Input(
+            description="You can provide customised setting to specify the layer to use our method and its dilation scale, for example see assets/dilate_settings/sdxl_4096x4096.txt in the github repo.",
             default=None,
         ),
     ) -> Path:
@@ -191,21 +183,30 @@ class Predictor(BasePredictor):
             seed = int.from_bytes(os.urandom(2), "big")
         print(f"Using seed: {seed}")
 
-        config = OmegaConf.load("./configs/sdxl_4096x4096.yaml")
+        if height <= 2560 or width <= 2560:
+            config = OmegaConf.load("./configs/sdxl_2048x2048.yaml")
+        else:
+            config = OmegaConf.load("./configs/sdxl_4096x4096.yaml")
         config.pixel_height = height
         config.pixel_width = width
         config.latent_height = height // 8
         config.latent_width = width // 8
         set_seed(seed)
 
-        if dilate_settings is not None:
-            config.dilate_settings = str(dilate_settings)
+        if dilate_scale is not None:
+            dilate_settings = dict()
 
-        dilate_settings = (
-            read_dilate_settings(config.dilate_settings)
-            if config.dilate_settings is not None
-            else dict()
-        )
+            for raw_line in dilate_scale.strip().splitlines():
+                name, dilate = raw_line.split(":")
+                dilate_settings[name] = float(dilate)
+                print(f"{name} : {dilate_settings[name]}")
+
+        else:
+            dilate_settings = (
+                read_dilate_settings(config.dilate_settings)
+                if config.dilate_settings is not None
+                else dict()
+            )
         ndcfg_dilate_settings = (
             read_dilate_settings(config.ndcfg_dilate_settings)
             if config.ndcfg_dilate_settings is not None
