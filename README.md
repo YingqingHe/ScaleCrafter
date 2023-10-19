@@ -5,7 +5,7 @@
 
  <a href='https://arxiv.org/abs/2310.07702'><img src='https://img.shields.io/badge/ArXiv-2310.07702-red'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
  <a href='https://yingqinghe.github.io/scalecrafter/'><img src='https://img.shields.io/badge/Project-Page-Green'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
- <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/lightning version-code-blue'></a> 
+ <a href='https://github.com/YingqingHe/ScaleCrafter-ptl'><img src='https://img.shields.io/badge/lightning version-code-blue'></a> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[![Replicate](https://replicate.com/cjwbw/scalecrafter/badge)](https://replicate.com/cjwbw/scalecrafter) 
  
 
 _**[Yingqing He*](https://github.com/YingqingHe), [Shaoshu Yang*](https://github.com/ssyang1999), [Haoxin Chen](https://github.com/scutpaul), [Xiaodong Cun](http://vinthony.github.io/), [Menghan Xia](https://menghanxia.github.io/), <br> 
