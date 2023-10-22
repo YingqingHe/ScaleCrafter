@@ -28,7 +28,7 @@ Arbitrary higher-resolution generation based on SD 2.1.
 ScaleCrafter is capable of generating images with a resolution of <i>4096 x 4096</i> and videos with a resolution of <i>2048 x 1152</i> based on pre-trained diffusion models on a lower resolution. Notably, our approach needs <i>no extra training/optimization</i>.
 
 ## :notes: Notes
-- Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks.
+- Welcome everyone to collaborate on the code repository, improve methods, and do more downstream tasks. Please check the [CONTRIBUTING.md](https://github.com/YingqingHe/ScaleCrafter/blob/main/CONTRIBUTING.md)
 - If you have any questions or comments, we are open for discussion.
 
 ## 🔆 Abstract
@@ -40,9 +40,9 @@ ScaleCrafter is capable of generating images with a resolution of <i>4096 x 4096
 - __[2023.10.12]__: 🔥 Release source code of both diffuser version and lightning version.
 <br>
 
-<!-- ## ⏳ TODO
--  -->
-
+## ⏳ TODO
+- [ ] Hugging Face Gradio demo
+- [ ] ScaleCrafter with more controls (e.g., ControlNet/T2I Adapter)
 
 ## ⚙️ Setup
 ```bash
