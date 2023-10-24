@@ -108,7 +108,7 @@ Please see the instructions above to use your customized text prompt.
 
 ---
 ## 🤗 Crafter Family
-🔥 [LongCrafter](https://github.com/arthur-qiu/LongerCrafter): Tuning-free method for longer high-quality video generation.  
+🔥 [LongerCrafter](https://github.com/arthur-qiu/LongerCrafter): Tuning-free method for longer high-quality video generation.  
 🔥 [VideoCrafter](https://github.com/AILab-CVC/VideoCrafter): Framework for high-quality video generation.  
 🔥 [TaleCrafter](https://github.com/AILab-CVC/TaleCrafter): An interactive story visualization tool that supports multiple characters.  
 
