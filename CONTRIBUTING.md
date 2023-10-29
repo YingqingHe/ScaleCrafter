@@ -24,7 +24,7 @@ Welcome to the ScaleCrafter project! We value and appreciate your contributions.
    git checkout -b your-branch-name
    ```
 
-   Choose a descriptive branch name that describes to your work.
+   Choose a descriptive branch name that describes your work.
 
 4. **Contribute Like a Pro**
 
