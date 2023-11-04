@@ -38,6 +38,7 @@ ScaleCrafter is capable of generating images with a resolution of <i>4096 x 4096
 ## 📝 Changelog
 - __[2023.10.12]__: 🔥 Release paper.
 - __[2023.10.12]__: 🔥 Release source code of both diffuser version and lightning version.
+- __[2023.10.16]__: Integrate [FreeU](https://github.com/ChenyangSi/FreeU) as the default mode to further improve our higher-res generation quality. (If you want disable this function, add `--disable_freeu`).
 <br>
 
 ## ⏳ TODO
