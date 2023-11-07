@@ -432,7 +432,7 @@ def main():
                 (len(output_prompts), 4, config.latent_height, config.latent_width),
                 device=accelerator.device, dtype=weight_dtype
             )
-            config.dilate_tau = g_dilate_tau
+            # config.dilate_tau = g_dilate_tau
             pipeline.forward = pipeline_processor(
                 pipeline,
                 ndcfg_tau=config.ndcfg_tau,
@@ -448,7 +448,7 @@ def main():
             images = pipeline.forward(
                 output_prompts, num_inference_steps=config.num_inference_steps, generator=None, latents=latents).images
 
-            sd_images = sd_pipeline(output_prompts).images
+            sd_images = sd_pipeline(output_prompts, num_inference_steps=config.num_inference_steps).images
             # sd_img_path = os.path.join(logging_dir, "sd_test.jpg")
             # sd_images.save(sd_img_path)
 
@@ -461,8 +461,8 @@ def main():
             
             return images,sd_images
 
-def process(prompt,sd_options,target_resolution,dilate_tau,ddim_steps,seed):
-    global g_prompt, g_sd_options, g_config, g_dilate_tau, g_ddim_steps, g_seed
+def process(prompt,sd_options,target_resolution,ddim_steps,seed):
+    global g_prompt, g_sd_options, g_config, g_ddim_steps, g_seed
     if prompt == "":
         prompt = "a professional photograph of an astronaut riding a horse"
     g_prompt = prompt
@@ -492,7 +492,7 @@ def process(prompt,sd_options,target_resolution,dilate_tau,ddim_steps,seed):
         g_config = "./configs/sd1.5_1024x1024.yaml" 
 
     
-    g_dilate_tau = dilate_tau
+    # g_dilate_tau = dilate_tau
     g_ddim_steps = ddim_steps
     g_seed = seed
 
@@ -543,11 +543,11 @@ if __name__ == "__main__":
                     # with gr.Row():
                         target_resolution = gr.Dropdown(["1024x1024","1280x1280","2048x1024","2048x2048"], label="Target Resolution", value="1024x1024", visible=True)
                     
-                    dilate_tau = gr.Slider(label='dilate_tau',
-                                            minimum=1,
-                                            maximum=50,
-                                            step=1,
-                                            value=30)
+                    # dilate_tau = gr.Slider(label='dilate_tau',
+                    #                         minimum=1,
+                    #                         maximum=50,
+                    #                         step=1,
+                    #                         value=30)
                     ddim_steps = gr.Slider(label='ddim steps',
                                             minimum=1,
                                             maximum=100,
@@ -564,17 +564,19 @@ if __name__ == "__main__":
                 # btn = gr.Button("Generate image", scale=0)
                 with gr.Row():
                     with gr.Column() as c1:
-                        image_1 = gr.Gallery(label='SD', show_label=True, elem_id="sd_gallery").style(columns=1, height='auto')
+                        image_1 = gr.Gallery(label='SD', show_label=True,  preview=True, elem_id="sd_gallery").style(columns=1, height='auto')
+                        # image_1 = gr.Image(interactive=False)
                         image_1_label = gr.Markdown("SD")
                 
             with gr.Group():
                 # btn = gr.Button("Generate image", scale=0)
                 with gr.Row():
                     with gr.Column() as c2:
-                        image_2 = gr.Gallery(label='ScaleCrafter', show_label=True, elem_id="gallery").style(columns=1, height='auto')
+                        image_2 = gr.Gallery(label='ScaleCrafter', show_label=True, preview=True,elem_id="gallery").style(columns=1, height='auto')
+                        # image_2 = gr.Image(interactive=False)
                         image_2_label = gr.Markdown("ScaleCrafter")
 
-        ips = [prompt,sd_options,target_resolution,dilate_tau,ddim_steps,seed]
+        ips = [prompt,sd_options,target_resolution,ddim_steps,seed]
         sd_options.change(Dropdown_list,inputs = sd_options, outputs=[target_resolution])
         btn.click(process, inputs=ips, outputs=[image_2, image_1])
 
