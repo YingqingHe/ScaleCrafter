@@ -77,6 +77,8 @@ def parse_args():
             " flag passed with the `accelerate.launch` command. Use this argument to override the accelerate config."
         ),
     )
+    parser.add_argument("--rank", type=int, default=None)
+    parser.add_argument("--gpu_num", type=int, default=None)
     parser.add_argument("--disable_freeu", action="store_true", help="disable freeU", default=False)
     parser.add_argument("--vae_tiling", action="store_true", help="enable vae tiling")
 
@@ -391,6 +393,10 @@ def read_dilate_settings(path):
 
 def main():
     args = parse_args()
+    rank, gpu_num = 0, 1
+    rank = rank if args.rank is None else args.rank
+    gpu_num = gpu_num if args.gpu_num is None else args.gpu_num
+
     logging_dir = os.path.join(args.logging_dir)
     config = OmegaConf.load(args.config)
 
@@ -460,21 +466,56 @@ def main():
     unet.eval()
     
     os.makedirs(os.path.join(logging_dir), exist_ok=True)
-    total_num = len(glob.glob(os.path.join(logging_dir, '*.jpg'))) - 1
+    # total_num = len(glob.glob(os.path.join(logging_dir, '*.jpg'))) - 1
+    #
+    # print(f"Using prompt {args.validation_prompt}")
+    # if os.path.isfile(args.validation_prompt):
+    #     with open(args.validation_prompt, 'r') as f:
+    #         validation_prompt = f.readlines()
+    #         validation_prompt = [line.strip() for line in validation_prompt]
+    # else:
+    #     validation_prompt = [args.validation_prompt, ]
 
+    total_num = 0
     print(f"Using prompt {args.validation_prompt}")
     if os.path.isfile(args.validation_prompt):
         with open(args.validation_prompt, 'r') as f:
             validation_prompt = f.readlines()
             validation_prompt = [line.strip() for line in validation_prompt]
+        validation_prompt = validation_prompt[rank::gpu_num]
+    elif os.path.isdir(args.validation_prompt):
+        caption_files = sorted(glob.glob(os.path.join(args.validation_prompt, '*.txt')))
+        # caption_files = caption_files[:10000]
+        validation_prompt = caption_files[rank::gpu_num]
+
+        finished_list = sorted(
+            glob.glob(os.path.join(logging_dir, f'*_{rank}.txt')),
+            key=lambda x: int(x.split('/')[-1].split('_')[0])
+        )
+        if len(finished_list) >= 2:
+            with open(finished_list[-2], 'r') as f:
+                last_caption = f.readline().strip()
+            with open(validation_prompt[len(finished_list[:-1]) - 1], 'r') as f:
+                assert last_caption == f.readline().strip()
+            total_num = len(finished_list[:-1])
+            validation_prompt = validation_prompt[len(finished_list[:-1]):]
+        print(f"Evaluating on {len(validation_prompt)} prompts.")
     else:
         validation_prompt = [args.validation_prompt, ]
 
     inference_batch_size = config.inference_batch_size
     num_batches = math.ceil(len(validation_prompt) / inference_batch_size)
     for i in range(num_batches):
-        output_prompts = validation_prompt[i * inference_batch_size:min(
+        prompts = validation_prompt[i * inference_batch_size:min(
             (i + 1) * inference_batch_size, len(validation_prompt))]
+        output_prompts = list()
+        for prompt in prompts:
+            if os.path.isfile(prompt):
+                with open(prompt, 'r') as f:
+                    prompt = f.readline().strip()
+                    output_prompts.append(prompt)
+            else:
+                output_prompts.append(prompt)
 
         for n in range(config.num_iters_per_prompt):
             seed = args.seed + n
@@ -547,10 +588,11 @@ def main():
 
             for image, prompt in zip(images, output_prompts):
                 total_num = total_num + 1
-                img_path = os.path.join(logging_dir, f"{total_num}_{prompt[:200]}_seed{seed}.jpg")
+                img_path = os.path.join(logging_dir, f"{total_num}_seed{seed}_{rank}.jpg")
                 image.save(img_path)
-                with open(os.path.join(logging_dir, f"{total_num}.txt"), 'w') as f:
+                with open(os.path.join(logging_dir, f"{total_num}_{rank}.txt"), 'w') as f:
                     f.writelines([prompt, ])
+
 
 if __name__ == "__main__":
     main()

@@ -27,8 +27,8 @@ from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from model import ReDilateConvProcessor, inflate_kernels
 from diffusers.utils import load_image
 
-logger = get_logger(__name__, log_level="INFO")
 
+logger = get_logger(__name__, log_level="INFO")
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple example of a training script.")
