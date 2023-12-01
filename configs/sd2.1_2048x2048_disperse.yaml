@@ -3,8 +3,8 @@ dilate_tau: 37
 inflate_tau: 0
 dilate_settings: ./assets/dilate_settings/sd2.1_2048x2048.txt
 ndcfg_dilate_settings: ./assets/ndcfg_dilate_settings/sd2.1_2048x2048.txt
-disperse_settings: ./transforms/R20to1_new.mat
-disperse_transform: ./assets/disperse_settings/sd2.1_2048x2048.txt
+disperse_settings: ./assets/disperse_settings/sd2.1_2048x2048.txt
+disperse_transform: ./transforms/R20to1_new.mat
 progressive: true
 num_inference_steps: 50
 inference_batch_size: 1
