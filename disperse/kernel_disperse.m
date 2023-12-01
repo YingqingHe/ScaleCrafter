@@ -27,6 +27,7 @@ function R = kernel_disperse(smallSize, largeSize, inputSize, scale, eta, verbos
     % Compute loss and get the equation set
     structError = largeOutput - smallOutput;
     structError = reshape(transpose(structError), [], 1);
+    % structError = structError(13);
     equations = [];
     for input = reshape(transpose(inputFeature), 1, [])
         equations = [equations; diff(structError, input)];
@@ -49,6 +50,7 @@ function R = kernel_disperse(smallSize, largeSize, inputSize, scale, eta, verbos
     
     pixelError = largeOutput - smallOutput;
     pixelError = reshape(transpose(pixelError), [], 1);
+    % pixelError = pixelError(5);
     equations = [];
     for input = reshape(transpose(inputFeature), 1, [])
         equations = [equations; diff(pixelError, input)];

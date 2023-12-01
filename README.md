@@ -107,6 +107,19 @@ To generate in other resolutions please use the following config files:
 
 Please see the instructions above to use your customized text prompt.
 
+****
+
+## 💫 Solve convolution dispersion transform 
+We implement MATLAB functions to achieve convolution dispersion. To use the functions, change your MATLAB working directory to `/disperse`. Solve the convlution dispersion transform with
+```python
+# Small kernel 3, large kernel 5, input feature size 3, perceptual field enlarge scale 2
+# Loss weighting 0.05, verbose (deliver visualization) true 
+R = kernel_disperse(3, 5, 3, 2, 0.05, true)
+```
+Then one can save the transform by right-clicking `R` in the workspace window and save this parameter in `.mat` format. We recommend using input feature size to match the size of small kernel, since it can speed up the computation. 
+Empirically, this performs well for all convolution kernels in the UNet. 
+One can also compute a specific dispersion transform for every input feature size in the diffusion model UNet.
+
 ---
 ## 🤗 Crafter Family
 🔥 [LongerCrafter](https://github.com/arthur-qiu/LongerCrafter): Tuning-free method for longer high-quality video generation.  

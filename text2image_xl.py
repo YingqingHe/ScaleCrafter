@@ -454,11 +454,11 @@ def main():
         if config.dilate_settings is not None else dict()
     ndcfg_dilate_settings = read_dilate_settings(config.ndcfg_dilate_settings) \
         if config.ndcfg_dilate_settings is not None else dict()
-    inflate_settings = read_module_list(config.inflate_settings) \
-        if config.inflate_settings is not None else list()
-    if config.inflate_transform is not None:
-        print(f"Using inflated conv {config.inflate_transform}")
-        transform = scipy.io.loadmat(config.inflate_transform)['R']
+    inflate_settings = read_module_list(config.disperse_settings) \
+        if config.disperse_settings is not None else list()
+    if config.disperse_transform is not None:
+        print(f"Using inflated conv {config.disperse_transform}")
+        transform = scipy.io.loadmat(config.disperse_transform)['R']
         transform = torch.tensor(transform, device=accelerator.device)
     else:
         transform = None
