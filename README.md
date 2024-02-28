@@ -139,5 +139,5 @@ One can also compute a specific dispersion transform for every input feature siz
 ```
 
 ## 📭 Contact
-If your have any comments or questions, feel free to contact [Yingqing He](yhebm@connect.ust.hk) or [Shaoshu Yang](shaoshuyang2020@outlook.com).
+If you have any comments or questions, feel free to contact [Yingqing He](yhebm@connect.ust.hk) or [Shaoshu Yang](shaoshuyang2020@outlook.com).
 
