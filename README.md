@@ -128,13 +128,11 @@ One can also compute a specific dispersion transform for every input feature siz
 
 ## 😉 Citation
 ```bib
-@article{he2023scalecrafter,
-      title={ScaleCrafter: Tuning-free Higher-Resolution Visual Generation with Diffusion Models}, 
-      author={Yingqing He and Shaoshu Yang and Haoxin Chen and Xiaodong Cun and Menghan Xia and Yong Zhang and Xintao Wang and Ran He and Qifeng Chen and Ying Shan},
-      year={2023},
-      eprint={2310.07702},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV}
+@inproceedings{he2023scalecrafter,
+  title={Scalecrafter: Tuning-free higher-resolution visual generation with diffusion models},
+  author={He, Yingqing and Yang, Shaoshu and Chen, Haoxin and Cun, Xiaodong and Xia, Menghan and Zhang, Yong and Wang, Xintao and He, Ran and Chen, Qifeng and Shan, Ying},
+  booktitle={The Twelfth International Conference on Learning Representations},
+  year={2024}
 }
 ```
 
